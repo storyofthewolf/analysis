@@ -1,0 +1,46 @@
+/gpfsm/dnb05/projects/p54/users/etwolf/hazyCHAMPS/final_outputs
+35
+hazyCHAMPS_case1.cam.h0.avg.nc
+hazyCHAMPS_case2.cam.h0.avg.nc
+hazyCHAMPS_case3.cam.h0.avg.nc
+hazyCHAMPS_case4.cam.h0.avg.nc
+hazyCHAMPS_case5.cam.h0.avg.nc
+hazyCHAMPS_case6.cam.h0.avg.nc
+hazyCHAMPS_case7.cam.h0.avg.nc
+hazyCHAMPS_case7_withHaze.cam.h0.avg.nc
+hazyCHAMPS_case8.cam.h0.avg.nc
+hazyCHAMPS_case9.cam.h0.avg.nc
+hazyCHAMPS_case10.cam.h0.avg.nc
+hazyCHAMPS_case11.cam.h0.avg.nc
+hazyCHAMPS_case12.cam.h0.avg.nc
+hazyCHAMPS_case13.cam.h0.avg.nc
+hazyCHAMPS_case14.cam.h0.avg.nc
+hazyCHAMPS_case15.cam.h0.avg.nc
+hazyCHAMPS_case16.cam.h0.avg.nc
+hazyCHAMPS_case17.cam.h0.avg.nc
+hazyCHAMPS_case18.cam.h0.avg.nc
+hazyCHAMPS_case19.cam.h0.avg.nc
+hazyCHAMPS_case20.cam.h0.avg.nc
+hazyCHAMPS_case21.cam.h0.avg.nc
+hazyCHAMPS_case22.cam.h0.avg.nc
+hazyCHAMPS_case23.cam.h0.avg.nc
+hazyCHAMPS_case23_withHaze.cam.h0.avg.nc
+hazyCHAMPS_case24.cam.h0.avg.nc
+hazyCHAMPS_case25.cam.h0.avg.nc
+hazyCHAMPS_case26.cam.h0.avg.nc
+hazyCHAMPS_case26.cam.h0.avg.nc
+hazyCHAMPS_case27.cam.h0.avg.nc
+hazyCHAMPS_case28.cam.h0.avg.nc
+hazyCHAMPS_case29.cam.h0.avg.nc
+hazyCHAMPS_case30.cam.h0.avg.nc
+hazyCHAMPS_case31.cam.h0.avg.nc
+hazyCHAMPS_case32.cam.h0.avg.nc
+
+
+
+
+
+###########################################################################
+first line is the common root directory of the files you are working with
+second line is the number of files to be processed
+finally we have a list of the files to be read and processes
