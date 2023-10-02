@@ -1,4 +1,4 @@
-/gpfsm/dnb05/projects/p54/users/etwolf/hazyCHAMPS/final_outputs
+/gpfsm/dnb05/projects/p54/users/etwolf/hazyCHAMPS/final_outputs/netcdf
 35
 hazyCHAMPS_case1.cam.h0.avg.nc
 hazyCHAMPS_case2.cam.h0.avg.nc
@@ -28,7 +28,7 @@ hazyCHAMPS_case23_withHaze.cam.h0.avg.nc
 hazyCHAMPS_case24.cam.h0.avg.nc
 hazyCHAMPS_case25.cam.h0.avg.nc
 hazyCHAMPS_case26.cam.h0.avg.nc
-hazyCHAMPS_case26.cam.h0.avg.nc
+hazyCHAMPS_case26_withHaze.cam.h0.avg.nc
 hazyCHAMPS_case27.cam.h0.avg.nc
 hazyCHAMPS_case28.cam.h0.avg.nc
 hazyCHAMPS_case29.cam.h0.avg.nc

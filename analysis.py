@@ -9,9 +9,6 @@
 # Purpose:  Analysis of a single file or small batch of files
 #                                                                                    
 # Notes:  Currently this code only deals with global mean quantities.
-#         Future development will include functions to extract vertical profiles, 
-#         surface, zonal, and latitudinal contour slices.  The goal is to produce 
-#         text file data that will be plotted elsewhere.  
 #                                                                                    
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,7 +51,9 @@ print(' files read in from files.in ')
 
 # read in climate data from netcdf
 for i in range(num):
-    print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+
+    if args.quiet == False: 
+        print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     print('~~~ ', filelist[i])
     ncid = nc.Dataset(filelist[i], 'r')
     lon = ncid.variables['lon'][:]
@@ -63,6 +62,11 @@ for i in range(num):
     nlat = lat.size
     lev = ncid.variables['lev'][:]
     nlev = lev.size
+
+    # pressures
+    PS     = ncid.variables['PS'][:]          ; PS = np.squeeze(PS)
+    PS     = ncid.variables['PS'][:]          ; PS = np.squeeze(PS)
+   
 
     # temperature variables
     TS     = ncid.variables['TS'][:]          ; TS = np.squeeze(TS)
@@ -76,13 +80,19 @@ for i in range(num):
     RELHUM = ncid.variables['RELHUM'][:]      ; RELHUM  = np.squeeze(RELHUM)
     TMQ    = ncid.variables['TMQ'][:]         ; TMQ     = np.squeeze(TMQ)
 
-    # cloud 
+    # cloud water
     CLDLIQ   = ncid.variables['CLDLIQ'][:]    ; CLDLIQ    = np.squeeze(CLDLIQ)
     CLDICE   = ncid.variables['CLDICE'][:]    ; CLDICE    = np.squeeze(CLDICE)
     TGCLDLWP = ncid.variables['TGCLDLWP'][:]  ; TGCLDLWP  = np.squeeze(TGCLDLWP)
     TGCLDIWP = ncid.variables['TGCLDIWP'][:]  ; TGCLDIWP  = np.squeeze(TGCLDIWP)
     TGCLDCWP = ncid.variables['TGCLDCWP'][:]  ; TGCLDCWP  = np.squeeze(TGCLDCWP)
 
+    # cloud fractions
+    CLOUD    = ncid.variables['CLOUD'][:]      ; CLOUD    = np.squeeze(CLOUD)
+    CLDTOT   = ncid.variables['CLDTOT'][:]     ; CLDTOT    = np.squeeze(CLDTOT)
+    CLDLOW   = ncid.variables['CLDLOW'][:]     ; CLDLOW    = np.squeeze(CLDLOW)
+    CLDMED   = ncid.variables['CLDMED'][:]     ; CLDMED    = np.squeeze(CLDMED)
+    CLDHGH   = ncid.variables['CLDHGH'][:]     ; CLDHGH    = np.squeeze(CLDHGH)
 
     # energy
     FLNT   = ncid.variables['FLNT'][:]    ; FLNT      = np.squeeze(FLNT)
@@ -102,6 +112,11 @@ for i in range(num):
     FDL   = ncid.variables['FDL'][:]    ; FDL    = np.squeeze(FDL)
     FUS   = ncid.variables['FUS'][:]    ; FUS    = np.squeeze(FUS)
     FDS   = ncid.variables['FDS'][:]    ; FDS    = np.squeeze(FDS)
+
+    # heating/cooling rates
+    QRS   = ncid.variables['QRS'][:]    ; QRS    = np.squeeze(QRS)
+    QRL   = ncid.variables['QRL'][:]    ; QRL    = np.squeeze(QRL)
+
     ncid.close()
 
 
@@ -113,6 +128,7 @@ for i in range(num):
     TGCLDLWP_gmean       = exo.area_weighted_avg(lon, lat, TGCLDLWP)
     TGCLDIWP_gmean       = exo.area_weighted_avg(lon, lat, TGCLDIWP)
     TGCLDCWP_gmean       = exo.area_weighted_avg(lon, lat, TGCLDCWP)
+    CLDTOT_gmean         = exo.area_weighted_avg(lon, lat, CLDTOT)
     FLNT_gmean           = exo.area_weighted_avg(lon, lat, FLNT)
     FSNT_gmean           = exo.area_weighted_avg(lon, lat, FSNT)
     FLNS_gmean           = exo.area_weighted_avg(lon, lat, FLNS)
@@ -145,9 +161,7 @@ for i in range(num):
     CLDLIQ_TOP = CLDLIQ[1,:,:] 
     CLDLIQ_TOP_gmean =  exo.area_weighted_avg(lon, lat, CLDLIQ_TOP)
 
-    if args.quiet == True:
-        print("quiet mode....")
-    else:
+    if args.quiet == False:
         ########  print global mean quantities  ###########    
         # These are a set of outputs of common interest for
         # print to screen applications
@@ -167,24 +181,25 @@ for i in range(num):
 
     # Presently, the data sent to print to file routines are user specified here
     # Later I might create a namelist around these instead
-    datacube[0,i] = TS_gmean          ; varnames[0] = 'TS'   
-    datacube[1,i] = ICEFRAC_gmean     ; varnames[1] = 'ICEFRAC'   
-    datacube[2,i] = toa_albedo_gmean  ; varnames[2] = 'TOAALB'   
-    datacube[3,i] = FULTOA_gmean      ; varnames[3] = 'FULTOA'   
-    datacube[4,i] = FLNT_gmean        ; varnames[4] = 'FLNT'   
-    datacube[5,i] = toa_balance_gmean ; varnames[5] = 'toaEBAL'   
-    datacube[6,i] = srf_balance_gmean ; varnames[6] = 'srfEBAL'   
-    datacube[7,i] = TMQ_gmean         ; varnames[7] = 'TMQ'   
-    datacube[8,i] = TGCLDLWP_gmean    ; varnames[8] = 'TGCLDLWP'   
-    datacube[9,i] = TGCLDIWP_gmean    ; varnames[9] = 'TGCLDIWP'   
+    x=0
+    datacube[x,i] = TS_gmean          ; varnames[x] = 'TS'        ; x=x+1
+    datacube[x,i] = ICEFRAC_gmean     ; varnames[x] = 'ICEFRAC'   ; x=x+1
+    datacube[x,i] = toa_albedo_gmean  ; varnames[x] = 'TOAALB'    ; x=x+1
+    datacube[x,i] = FULTOA_gmean      ; varnames[x] = 'OLR'       ; x=x+1
+    datacube[x,i] = toa_balance_gmean ; varnames[x] = 'toaEBAL'   ; x=x+1
+    datacube[x,i] = srf_balance_gmean ; varnames[x] = 'srfEBAL'   ; x=x+1
+    datacube[x,i] = TMQ_gmean         ; varnames[x] = 'TMQ'       ; x=x+1
+    datacube[x,i] = TGCLDLWP_gmean    ; varnames[x] = 'TGCLDLWP'  ; x=x+1
+    datacube[x,i] = TGCLDIWP_gmean    ; varnames[x] = 'TGCLDIWP'  ; x=x+1
+    datacube[x,i] = CLDTOT_gmean      ; varnames[x] = 'CLDTOT'  ; x=x+1
     
 
 analysis_utils.print_data_to_file(num, filelist_short, datacube, varnames)
 
 
-
+print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 print(' Exiting analysis.py ... ')
-print(' ... i hope you found the answers to all your questions ')
+print(' ... i hope you found the answers that you seek ')
 print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')

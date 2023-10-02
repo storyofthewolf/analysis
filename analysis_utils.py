@@ -37,7 +37,7 @@ def print_data_to_file(num, filelist_short, datacube, varnames):
 
     char_count_array = np.array([len(s) for s in filelist_short])                      
     maxchar = np.amax(char_count_array)
-    istr = "i filenames"
+    istr = "i  filenames"
     istr = "{:<{}}".format(istr, maxchar+2) 
     format_number = "{:9.4f}"
     format_string = "{:>9}"
@@ -59,8 +59,10 @@ def print_data_to_file(num, filelist_short, datacube, varnames):
                     print(format_string.format(varnames[j]), flush=True,  end=endstr, file=f)
                 endstr =' '
             # This prints file index and name    
-            istr2 = str(ii) + ' ' + filelist_short[i]
-            istr2 = "{:<{}}".format(istr2, maxchar+2)
+            if ii < 10:   istr2 = str(ii) + '   ' + filelist_short[i]
+            if ii >= 10:  istr2 = str(ii) + '  '  + filelist_short[i]
+            if ii >= 100: istr2 = str(ii) + ' '   + filelist_short[i]
+            istr2 = "{:<{}}".format(istr2, maxchar+4)
             print(istr2, end=endstr, flush=True, file=f)            
             for j in index:                
                 # This prints the output data
