@@ -26,12 +26,13 @@ import sys
 
 # input arguments and options                                                                                                      
 parser = argparse.ArgumentParser()
-parser.add_argument('--quiet',      action='store_true', help='do not print to screen')
+parser.add_argument('--quiet',            action='store_true', help='do not print to screen')
+parser.add_argument('--vertical',         action='store_true', help='calculate vertical profiles')
 args = parser.parse_args()
 
 
 
-root, num, filelist_short = analysis_utils.read_file_list()
+root, num, filelist_short, grav, mwdry = analysis_utils.read_file_list()
 filelist = np.empty(num, dtype='U200')
 filelist[:] = root + '/' + filelist_short[:]
 
@@ -47,6 +48,9 @@ print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 print(' Entering analysis.py ')
 print(' files read in from files.in ')
 
+if args.vertical == True:
+    print("If using Z vertical coordinates, make sure to set gravity and mwdry in files.in")
+
 
 
 # read in climate data from netcdf
@@ -55,17 +59,28 @@ for i in range(num):
     if args.quiet == False: 
         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     print('~~~ ', filelist[i])
+    if args.vertical == True:
+        print('~~~ gravity = ', grav[i])
+        print('~~~ mwdry = ', mwdry[i])
+
     ncid = nc.Dataset(filelist[i], 'r')
-    lon = ncid.variables['lon'][:]
-    nlon = lon.size
-    lat = ncid.variables['lat'][:]
+
+    lon  = ncid.variables['lon'][:]
+    lat  = ncid.variables['lat'][:]
+    lev  = ncid.variables['lev'][:]
+    hyai = ncid.variables['hyai'][:]
+    hybi = ncid.variables['hybi'][:]
+    hyam = ncid.variables['hyam'][:]
+    hybm = ncid.variables['hybm'][:]
+
     nlat = lat.size
-    lev = ncid.variables['lev'][:]
+    nlon = lon.size
     nlev = lev.size
+
 
     # pressures
     PS     = ncid.variables['PS'][:]          ; PS = np.squeeze(PS)
-    PS     = ncid.variables['PS'][:]          ; PS = np.squeeze(PS)
+    P0     = ncid.variables['PS'][:]          ; P0 = np.squeeze(P0)
    
 
     # temperature variables
@@ -151,7 +166,49 @@ for i in range(num):
     energy               = FSNT[:,:] - FLNT[:,:] 
     energy_gmean         = exo.area_weighted_avg(lon, lat, energy)
 
+    # define global pressure coordinate arrays
+    G = grav[i]
+    R = 8.314462/(mwdry[i]/1000.)
+    lev_P, ilev_P = exo.hybrid2pressure(nlon, nlat, nlev, PS, P0, hyam, hybm, hyai, hybi)
+    lev_Z, ilev_Z = exo.hybrid2height(nlon, nlat, nlev, PS, P0, hyam, hybm, hyai, hybi, T, G, R)
+    
+    # do vertical profiles
+    # this is slow, so only do when requested
+    if args.vertical == True:
+        # define global mean profiles
+        Pmid_profile = analysis_utils.calc_gmean_profiles(lon, lat, lev_P)
+        Pint_profile = analysis_utils.calc_gmean_profiles(lon, lat, ilev_P)
+        Tmid_profile = analysis_utils.calc_gmean_profiles(lon, lat, T)
+        Qmid_profile = analysis_utils.calc_gmean_profiles(lon, lat, Q)
+        # create Tint_profile
+        Tint_profile = np.zeros((nlev+1), dtype=float)
+        Tint_profile[nlev] = TS_gmean    
+        Tint_profile[0] = Tmid_profile[0]    
+        for z in range(nlev-1):
+            Tint_profile[z+1] = (Tmid_profile[z] + Tmid_profile[z+1])/2.
+        Zmid_profile = analysis_utils.calc_gmean_profiles(lon, lat, lev_Z)
+        Zint_profile = analysis_utils.calc_gmean_profiles(lon, lat, ilev_Z)
+        # run temperature profile diagnostics for lapse rate, 
+        # stratosphere max temperature and tropopause
+        lapse_rate, itropo, istrat = analysis_utils.tprofile_diags(Pmid_profile, Tmid_profile, Zint_profile, Tint_profile)
+        T_STRAT_gmean = Tmid_profile[istrat]
+        T_TROPO_gmean = Tmid_profile[itropo]
+        Q_STRAT_gmean = Qmid_profile[itropo]
+        if args.quiet == False:
+            print("-------------- midlayer profile ----------------")
+            for g in range(nlev):
+                print(g, Pmid_profile[g], Zmid_profile[g], Tmid_profile[g], lapse_rate[g])
+            print("-------------- interface profile ----------------")
+            for g in range(nlev+1):
+                print(g, Pint_profile[g], Zint_profile[g], Tint_profile[g])
+
+        # function to print profile information to a text file
+    #        analysis_utils.print_vertical_to_file(num, filelist_short, data)
+
+
     # top layer temperature, water vapor and clouds
+    PTOP = lev_P[1,:,:] 
+    PTOP_gmean =  exo.area_weighted_avg(lon, lat, PTOP)
     TTOP = T[1,:,:] 
     TTOP_gmean =  exo.area_weighted_avg(lon, lat, TTOP)
     QTOP = Q[1,:,:] 
@@ -161,10 +218,12 @@ for i in range(num):
     CLDLIQ_TOP = CLDLIQ[1,:,:] 
     CLDLIQ_TOP_gmean =  exo.area_weighted_avg(lon, lat, CLDLIQ_TOP)
 
+
     if args.quiet == False:
         ########  print global mean quantities  ###########    
         # These are a set of outputs of common interest for
         # print to screen applications
+        print("------------------ global mean ------------------")
         print("TS mean ", TS_gmean)
         print("ICEFRAC", ICEFRAC_gmean)
         print("toa albedo ", toa_albedo_gmean)
@@ -176,13 +235,20 @@ for i in range(num):
         if 'FSDTOA' in ncid.variables: print("FSDTOA", FSDTOA_gmean)
         print("LW FLUXES ", FULTOA_gmean, FDLTOA_gmean, FULTOA_gmean - FDLTOA_gmean)
         print("SW FLUXES ", FUSTOA_gmean, FDSTOA_gmean)
-        print("TOP ", TTOP_gmean, QTOP_gmean, CLDICE_TOP_gmean, CLDLIQ_TOP_gmean)
+        print("TOP ", PTOP_gmean, TTOP_gmean, QTOP_gmean, CLDICE_TOP_gmean, CLDLIQ_TOP_gmean)
+
+        
+
+
 
 
     # Presently, the data sent to print to file routines are user specified here
     # Later I might create a namelist around these instead
     x=0
     datacube[x,i] = TS_gmean          ; varnames[x] = 'TS'        ; x=x+1
+    if (args.vertical == True):
+        datacube[x,i] = T_STRAT_gmean ; varnames[x] = 'T_STRAT'   ; x=x+1
+        datacube[x,i] = T_TROPO_gmean ; varnames[x] = 'T_TROPO'   ; x=x+1
     datacube[x,i] = ICEFRAC_gmean     ; varnames[x] = 'ICEFRAC'   ; x=x+1
     datacube[x,i] = toa_albedo_gmean  ; varnames[x] = 'TOAALB'    ; x=x+1
     datacube[x,i] = FULTOA_gmean      ; varnames[x] = 'OLR'       ; x=x+1
@@ -191,9 +257,11 @@ for i in range(num):
     datacube[x,i] = TMQ_gmean         ; varnames[x] = 'TMQ'       ; x=x+1
     datacube[x,i] = TGCLDLWP_gmean    ; varnames[x] = 'TGCLDLWP'  ; x=x+1
     datacube[x,i] = TGCLDIWP_gmean    ; varnames[x] = 'TGCLDIWP'  ; x=x+1
-    datacube[x,i] = CLDTOT_gmean      ; varnames[x] = 'CLDTOT'  ; x=x+1
+    datacube[x,i] = CLDTOT_gmean      ; varnames[x] = 'CLDTOT'    ; x=x+1
+    if (args.vertical == True):
+        datacube[x,i] = Q_STRAT_gmean ; varnames[x] = 'Q_STRAT'   ; x=x+1
     
-
+# output global mean quantities a text file
 analysis_utils.print_data_to_file(num, filelist_short, datacube, varnames)
 
 
