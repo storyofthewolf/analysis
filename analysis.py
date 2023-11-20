@@ -157,7 +157,18 @@ for i in range(num):
     FUSTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
     temp                 = FDS[1,:,:] ; temp = np.squeeze(temp)
     FDSTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
+
+    temp                 = FUL[nlev,:,:] ; temp = np.squeeze(temp)
+    FULSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
+    temp                 = FDL[nlev,:,:] ; temp = np.squeeze(temp)
+    FDLSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
+    temp                 = FUS[nlev,:,:] ; temp = np.squeeze(temp)
+    FUSSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
+    temp                 = FDS[nlev,:,:] ; temp = np.squeeze(temp)
+    FDSSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
+
     toa_albedo_gmean     = FUSTOA_gmean/FDSTOA_gmean
+    srf_albedo_gmean     = FUSSRF_gmean/FDSSRF_gmean
     toa_balance_gmean    = FSNT_gmean - FLNT_gmean
     srf_balance_gmean    = FSNS_gmean - FLNS_gmean - SHFLX_gmean - LHFLX_gmean
     energy               = FSNT[:,:] - FLNT[:,:] 
@@ -229,8 +240,6 @@ for i in range(num):
                     TS_AS[y,x] = TS[y,x]
         TS_SS_gmean = exo.area_weighted_avg(lon, lat, TS_SS)
         TS_AS_gmean = exo.area_weighted_avg(lon, lat, TS_AS)
-        
-
 
     if args.quiet == False:
         ########  print global mean quantities  ###########    
@@ -238,8 +247,12 @@ for i in range(num):
         # print to screen applications
         print("------------------ global mean ------------------")
         print("TS mean ", TS_gmean)
+        if args.synchronous == True:
+            print("TS_SS, TS_AS ", TS_SS_gmean, TS_AS_gmean)
+        print("TS max, TS min ", np.max(TS[:,:]), np.min(TS[:,:]))
         print("ICEFRAC", ICEFRAC_gmean)
         print("toa albedo ", toa_albedo_gmean)
+        print("srf albedo ", srf_albedo_gmean)
         print("olr ", FULTOA_gmean)
         print("TMQ TGCLDLWP TGCLDIWP ", TMQ_gmean, TGCLDIWP_gmean, TGCLDLWP_gmean)
         print("TOA ", toa_balance_gmean, energy_gmean)
@@ -249,8 +262,7 @@ for i in range(num):
         print("LW FLUXES ", FULTOA_gmean, FDLTOA_gmean, FULTOA_gmean - FDLTOA_gmean)
         print("SW FLUXES ", FUSTOA_gmean, FDSTOA_gmean)
         print("TOP ", PTOP_gmean, TTOP_gmean, QTOP_gmean)
-        if args.synchronous == True:
-            print("TS_SS, TS_AS ", TS_SS_gmean, TS_AS_gmean)
+
         
     # Presently, the data sent to print to file routines are user specified here
     # Later I might create a namelist around these instead

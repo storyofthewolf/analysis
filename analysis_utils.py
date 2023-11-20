@@ -113,16 +113,16 @@ def tprofile_diags(pmid, tmid, zint, tint):
         lapse_rate[z] = (-1)*deltaT/(deltaZ/1000.0) 
 
     # define tropopause as the minimum temperature
-    t_tropo = min(tmid)
-    i_tropo = np.where(tmid[:] == min(tmid[:]))
+    t_tropo = np.min(tmid)
+    i_tropo = np.where(tmid[:] == np.min(tmid[:]))
     p_tropo = pmid[i_tropo]
     #print("itropo ", i_tropo, t_tropo, p_tropo)
     
     # define stratosphere temperature as maximum temperature
     # at or above the already defined tropopause
     stratcol = np.where(pmid[:] <= p_tropo)
-    t_strat = max(tmid[stratcol])
-    i_strat = np.where(tmid[:] == max(tmid[stratcol]))
+    t_strat  = np.max(tmid[stratcol])
+    i_strat  = np.where(tmid[:] == max(tmid[stratcol]))
     p_strat  = pmid[i_strat] 
     #print("strat ", i_strat, t_strat, p_strat)
    
