@@ -28,9 +28,8 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('--quiet',            action='store_true', help='do not print to screen')
 parser.add_argument('--vertical',         action='store_true', help='calculate vertical profiles')
+parser.add_argument('--synchronous',      action='store_true', help='calculate substellar/antistellar means')
 args = parser.parse_args()
-
-
 
 root, num, filelist_short, grav, mwdry = analysis_utils.read_file_list()
 filelist = np.empty(num, dtype='U200')
@@ -50,7 +49,6 @@ print(' files read in from files.in ')
 
 if args.vertical == True:
     print("If using Z vertical coordinates, make sure to set gravity and mwdry in files.in")
-
 
 
 # read in climate data from netcdf
@@ -80,7 +78,7 @@ for i in range(num):
 
     # pressures
     PS     = ncid.variables['PS'][:]          ; PS = np.squeeze(PS)
-    P0     = ncid.variables['PS'][:]          ; P0 = np.squeeze(P0)
+    P0     = ncid.variables['P0'][:]          ; P0 = np.squeeze(P0)
    
 
     # temperature variables
@@ -100,7 +98,7 @@ for i in range(num):
     CLDICE   = ncid.variables['CLDICE'][:]    ; CLDICE    = np.squeeze(CLDICE)
     TGCLDLWP = ncid.variables['TGCLDLWP'][:]  ; TGCLDLWP  = np.squeeze(TGCLDLWP)
     TGCLDIWP = ncid.variables['TGCLDIWP'][:]  ; TGCLDIWP  = np.squeeze(TGCLDIWP)
-    TGCLDCWP = ncid.variables['TGCLDCWP'][:]  ; TGCLDCWP  = np.squeeze(TGCLDCWP)
+   # TGCLDCWP = ncid.variables['TGCLDCWP'][:]  ; TGCLDCWP  = np.squeeze(TGCLDCWP)
 
     # cloud fractions
     CLOUD    = ncid.variables['CLOUD'][:]      ; CLOUD    = np.squeeze(CLOUD)
@@ -142,7 +140,6 @@ for i in range(num):
     TMQ_gmean            = exo.area_weighted_avg(lon, lat, TMQ)
     TGCLDLWP_gmean       = exo.area_weighted_avg(lon, lat, TGCLDLWP)
     TGCLDIWP_gmean       = exo.area_weighted_avg(lon, lat, TGCLDIWP)
-    TGCLDCWP_gmean       = exo.area_weighted_avg(lon, lat, TGCLDCWP)
     CLDTOT_gmean         = exo.area_weighted_avg(lon, lat, CLDTOT)
     FLNT_gmean           = exo.area_weighted_avg(lon, lat, FLNT)
     FSNT_gmean           = exo.area_weighted_avg(lon, lat, FSNT)
@@ -203,7 +200,7 @@ for i in range(num):
                 print(g, Pint_profile[g], Zint_profile[g], Tint_profile[g])
 
         # function to print profile information to a text file
-    #        analysis_utils.print_vertical_to_file(num, filelist_short, data)
+        # analysis_utils.print_vertical_to_file(num, filelist_short, data)
 
 
     # top layer temperature, water vapor and clouds
@@ -218,6 +215,22 @@ for i in range(num):
     CLDLIQ_TOP = CLDLIQ[1,:,:] 
     CLDLIQ_TOP_gmean =  exo.area_weighted_avg(lon, lat, CLDLIQ_TOP)
 
+    # compute substellar and antistellar means
+    if args.synchronous == True:
+        TS_SS = np.zeros((nlat, nlon), dtype=float)
+        TS_AS = np.zeros((nlat, nlon), dtype=float)
+        for x in range(nlon):
+            for y in range(nlat):
+                if (FDS[0,y,x] >  0.0):
+                    TS_SS[y,x] = TS[y,x]
+                    TS_AS[y,x] = -999.0
+                else:
+                    TS_SS[y,x] = -999.0
+                    TS_AS[y,x] = TS[y,x]
+        TS_SS_gmean = exo.area_weighted_avg(lon, lat, TS_SS)
+        TS_AS_gmean = exo.area_weighted_avg(lon, lat, TS_AS)
+        
+
 
     if args.quiet == False:
         ########  print global mean quantities  ###########    
@@ -228,20 +241,17 @@ for i in range(num):
         print("ICEFRAC", ICEFRAC_gmean)
         print("toa albedo ", toa_albedo_gmean)
         print("olr ", FULTOA_gmean)
-        print("TMQ TGCLDLWP TGCLDIWP TGCLDCWP ", TMQ_gmean, TGCLDIWP_gmean, TGCLDLWP_gmean, TGCLDCWP_gmean)
+        print("TMQ TGCLDLWP TGCLDIWP ", TMQ_gmean, TGCLDIWP_gmean, TGCLDLWP_gmean)
         print("TOA ", toa_balance_gmean, energy_gmean)
         print("SRF ", srf_balance_gmean)
         print("FLNT FSNT", FLNT_gmean, FSNT_gmean)
         if 'FSDTOA' in ncid.variables: print("FSDTOA", FSDTOA_gmean)
         print("LW FLUXES ", FULTOA_gmean, FDLTOA_gmean, FULTOA_gmean - FDLTOA_gmean)
         print("SW FLUXES ", FUSTOA_gmean, FDSTOA_gmean)
-        print("TOP ", PTOP_gmean, TTOP_gmean, QTOP_gmean, CLDICE_TOP_gmean, CLDLIQ_TOP_gmean)
-
+        print("TOP ", PTOP_gmean, TTOP_gmean, QTOP_gmean)
+        if args.synchronous == True:
+            print("TS_SS, TS_AS ", TS_SS_gmean, TS_AS_gmean)
         
-
-
-
-
     # Presently, the data sent to print to file routines are user specified here
     # Later I might create a namelist around these instead
     x=0
