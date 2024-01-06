@@ -26,9 +26,10 @@ import sys
 
 # input arguments and options                                                                                                      
 parser = argparse.ArgumentParser()
-parser.add_argument('--quiet',            action='store_true', help='do not print to screen')
-parser.add_argument('--vertical',         action='store_true', help='calculate vertical profiles')
-parser.add_argument('--synchronous',      action='store_true', help='calculate substellar/antistellar means')
+parser.add_argument('--quiet',         action='store_true', help='do not print to screen')
+parser.add_argument('--vert',          action='store_true', help='calculate vertical profiles')
+parser.add_argument('--synch',         action='store_true', help='calculate substellar/antistellar means')
+parser.add_argument('--cf',            action='store_true', help='tabulate clear sky fluxes and cloud forcings')
 args = parser.parse_args()
 
 root, num, filelist_short, grav, mwdry = analysis_utils.read_file_list()
@@ -47,7 +48,7 @@ print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 print(' Entering analysis.py ')
 print(' files read in from files.in ')
 
-if args.vertical == True:
+if args.vert == True:
     print("If using Z vertical coordinates, make sure to set gravity and mwdry in files.in")
 
 
@@ -57,7 +58,7 @@ for i in range(num):
     if args.quiet == False: 
         print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     print('~~~ ', filelist[i])
-    if args.vertical == True:
+    if args.vert == True:
         print('~~~ gravity = ', grav[i])
         print('~~~ mwdry = ', mwdry[i])
 
@@ -74,7 +75,6 @@ for i in range(num):
     nlat = lat.size
     nlon = lon.size
     nlev = lev.size
-
 
     # pressures
     PS     = ncid.variables['PS'][:]          ; PS = np.squeeze(PS)
@@ -98,7 +98,6 @@ for i in range(num):
     CLDICE   = ncid.variables['CLDICE'][:]    ; CLDICE    = np.squeeze(CLDICE)
     TGCLDLWP = ncid.variables['TGCLDLWP'][:]  ; TGCLDLWP  = np.squeeze(TGCLDLWP)
     TGCLDIWP = ncid.variables['TGCLDIWP'][:]  ; TGCLDIWP  = np.squeeze(TGCLDIWP)
-   # TGCLDCWP = ncid.variables['TGCLDCWP'][:]  ; TGCLDCWP  = np.squeeze(TGCLDCWP)
 
     # cloud fractions
     CLOUD    = ncid.variables['CLOUD'][:]      ; CLOUD    = np.squeeze(CLOUD)
@@ -130,6 +129,14 @@ for i in range(num):
     QRS   = ncid.variables['QRS'][:]    ; QRS    = np.squeeze(QRS)
     QRL   = ncid.variables['QRL'][:]    ; QRL    = np.squeeze(QRL)
 
+    if args.cf == True:
+        FLNTC  = ncid.variables['FLNTC'][:]   ; FLNTC    = np.squeeze(FLNTC)
+        FSNTC  = ncid.variables['FSNTC'][:]   ; FSNTC    = np.squeeze(FSNTC)
+        FULC   = ncid.variables['FULC'][:]    ; FULC    = np.squeeze(FULC)
+        FDLC   = ncid.variables['FDLC'][:]    ; FDLC    = np.squeeze(FDLC)
+        FUSC   = ncid.variables['FUSC'][:]    ; FUSC    = np.squeeze(FUSC)
+        FDSC   = ncid.variables['FDSC'][:]    ; FDSC    = np.squeeze(FDSC)
+
     ncid.close()
 
 
@@ -157,7 +164,6 @@ for i in range(num):
     FUSTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
     temp                 = FDS[1,:,:] ; temp = np.squeeze(temp)
     FDSTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
-
     temp                 = FUL[nlev,:,:] ; temp = np.squeeze(temp)
     FULSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
     temp                 = FDL[nlev,:,:] ; temp = np.squeeze(temp)
@@ -166,6 +172,39 @@ for i in range(num):
     FUSSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
     temp                 = FDS[nlev,:,:] ; temp = np.squeeze(temp)
     FDSSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
+
+    if args.cf == True:
+        FLNTC_gmean           = exo.area_weighted_avg(lon, lat, FLNTC)
+        FSNTC_gmean           = exo.area_weighted_avg(lon, lat, FSNTC)
+        temp                  = FULC[1,:,:] ; temp = np.squeeze(temp)
+        FULCTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
+        temp                  = FDLC[1,:,:] ; temp = np.squeeze(temp)
+        FDLCTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
+        temp                  = FUSC[1,:,:] ; temp = np.squeeze(temp)
+        FUSCTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
+        temp                  = FDSC[1,:,:] ; temp = np.squeeze(temp)
+        FDSCTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
+        temp                  = FULC[nlev,:,:] ; temp = np.squeeze(temp)
+        FULCSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
+        temp                  = FDLC[nlev,:,:] ; temp = np.squeeze(temp)
+        FDLCSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
+        temp                  = FUSC[nlev,:,:] ; temp = np.squeeze(temp)
+        FUSCSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
+        temp                  = FDSC[nlev,:,:] ; temp = np.squeeze(temp)
+        FDSCSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
+
+        # calculate cloud forcings
+        lw_cldforc = np.zeros((nlat, nlon), dtype=float)
+        sw_cldforc = np.zeros((nlat, nlon), dtype=float)
+        for x in range(nlon):
+            for y in range(nlat):
+                sw_cldforc[y,x] = FSNT[y,x]  - FSNTC[y,x]
+                lw_cldforc[y,x] = FLNTC[y,x] - FLNT[y,x]
+        temp                  = sw_cldforc[:,:] ; temp = np.squeeze(temp)
+        sw_cldforc_gmean         = exo.area_weighted_avg(lon, lat, temp)
+        temp                  = lw_cldforc[:,:] ; temp = np.squeeze(temp)
+        lw_cldforc_gmean         = exo.area_weighted_avg(lon, lat, temp)
+
 
     toa_albedo_gmean     = FUSTOA_gmean/FDSTOA_gmean
     srf_albedo_gmean     = FUSSRF_gmean/FDSSRF_gmean
@@ -182,7 +221,7 @@ for i in range(num):
     
     # do vertical profiles
     # this is slow, so only do when requested
-    if args.vertical == True:
+    if args.vert == True:
         # define global mean profiles
         Pmid_profile = analysis_utils.calc_gmean_profiles(lon, lat, lev_P)
         Pint_profile = analysis_utils.calc_gmean_profiles(lon, lat, ilev_P)
@@ -227,19 +266,50 @@ for i in range(num):
     CLDLIQ_TOP_gmean =  exo.area_weighted_avg(lon, lat, CLDLIQ_TOP)
 
     # compute substellar and antistellar means
-    if args.synchronous == True:
-        TS_SS = np.zeros((nlat, nlon), dtype=float)
-        TS_AS = np.zeros((nlat, nlon), dtype=float)
+    if args.synch == True:
+        TS_SS       = np.zeros((nlat, nlon), dtype=float)
+        TS_AS       = np.zeros((nlat, nlon), dtype=float)
+        CLDTOT_SS   = np.zeros((nlat, nlon), dtype=float)
+        CLDTOT_AS   = np.zeros((nlat, nlon), dtype=float)
+        TGCLDLWP_SS = np.zeros((nlat, nlon), dtype=float)
+        TGCLDLWP_AS = np.zeros((nlat, nlon), dtype=float)
+        TGCLDIWP_SS = np.zeros((nlat, nlon), dtype=float)
+        TGCLDIWP_AS = np.zeros((nlat, nlon), dtype=float)
+        FLNT_SS     = np.zeros((nlat, nlon), dtype=float)
+        FLNT_AS     = np.zeros((nlat, nlon), dtype=float)
+        if args.cf == True:
+            lw_cldforc_AS = np.zeros((nlat, nlon), dtype=float)
+            lw_cldforc_SS = np.zeros((nlat, nlon), dtype=float)
+
         for x in range(nlon):
             for y in range(nlat):
                 if (FDS[0,y,x] >  0.0):
-                    TS_SS[y,x] = TS[y,x]
-                    TS_AS[y,x] = -999.0
+                    TS_SS[y,x]         = TS[y,x]          ;  TS_AS[y,x]         = -999.0
+                    CLDTOT_SS[y,x]     = CLDTOT[y,x]      ;  CLDTOT_AS[y,x]     = -999.0
+                    TGCLDIWP_SS[y,x]   = TGCLDIWP[y,x]    ;  TGCLDIWP_AS[y,x]   = -999.0
+                    TGCLDLWP_SS[y,x]   = TGCLDLWP[y,x]    ;  TGCLDLWP_AS[y,x]   = -999.0
+                    FLNT_SS[y,x]       = FLNT[y,x]        ;  FLNT_AS[y,x]       = -999.0
+                    lw_cldforc_SS[y,x] = lw_cldforc[y,x]  ;  lw_cldforc_AS[y,x] = -999.0                
                 else:
-                    TS_SS[y,x] = -999.0
-                    TS_AS[y,x] = TS[y,x]
-        TS_SS_gmean = exo.area_weighted_avg(lon, lat, TS_SS)
-        TS_AS_gmean = exo.area_weighted_avg(lon, lat, TS_AS)
+                    TS_SS[y,x]         = -999.0           ;  TS_AS[y,x]         = TS[y,x]
+                    CLDTOT_SS[y,x]     = -999.0           ;  CLDTOT_AS[y,x]     = CLDTOT[y,x]
+                    TGCLDIWP_SS[y,x]   = -999.0           ;  TGCLDIWP_AS[y,x]   = TGCLDIWP[y,x]
+                    TGCLDLWP_SS[y,x]   = -999.0           ;  TGCLDLWP_AS[y,x]   = TGCLDLWP[y,x]
+                    FLNT_SS[y,x]       = -999.0           ;  FLNT_AS[y,x]       = FLNT[y,x]
+                    lw_cldforc_SS[y,x] = -999.0           ;  lw_cldforc_AS[y,x] = lw_cldforc[y,x]
+
+        TS_SS_gmean          = exo.area_weighted_avg(lon, lat, TS_SS)
+        TS_AS_gmean          = exo.area_weighted_avg(lon, lat, TS_AS)
+        CLDTOT_SS_gmean      = exo.area_weighted_avg(lon, lat, CLDTOT_SS)
+        CLDTOT_AS_gmean      = exo.area_weighted_avg(lon, lat, CLDTOT_AS)
+        TGCLDLWP_SS_gmean    = exo.area_weighted_avg(lon, lat, TGCLDLWP_SS)
+        TGCLDLWP_AS_gmean    = exo.area_weighted_avg(lon, lat, TGCLDLWP_AS)
+        TGCLDIWP_SS_gmean    = exo.area_weighted_avg(lon, lat, TGCLDIWP_SS)
+        TGCLDIWP_AS_gmean    = exo.area_weighted_avg(lon, lat, TGCLDIWP_AS)
+        FLNT_SS_gmean        = exo.area_weighted_avg(lon, lat, FLNT_SS)
+        FLNT_AS_gmean        = exo.area_weighted_avg(lon, lat, FLNT_AS)
+        lw_cldforc_SS_gmean  = exo.area_weighted_avg(lon, lat, lw_cldforc_SS)
+        lw_cldforc_AS_gmean  = exo.area_weighted_avg(lon, lat, lw_cldforc_AS)
 
     if args.quiet == False:
         ########  print global mean quantities  ###########    
@@ -247,28 +317,42 @@ for i in range(num):
         # print to screen applications
         print("------------------ global mean ------------------")
         print("TS mean ", TS_gmean)
-        if args.synchronous == True:
+        if args.synch == True:
             print("TS_SS, TS_AS ", TS_SS_gmean, TS_AS_gmean)
         print("TS max, TS min ", np.max(TS[:,:]), np.min(TS[:,:]))
         print("ICEFRAC", ICEFRAC_gmean)
         print("toa albedo ", toa_albedo_gmean)
         print("srf albedo ", srf_albedo_gmean)
-        print("olr ", FULTOA_gmean)
-        print("TMQ TGCLDLWP TGCLDIWP ", TMQ_gmean, TGCLDIWP_gmean, TGCLDLWP_gmean)
-        print("TOA ", toa_balance_gmean, energy_gmean)
-        print("SRF ", srf_balance_gmean)
+        print("TMQ TGCLDLWP TGCLDIWP ", TMQ_gmean, TGCLDLWP_gmean, TGCLDIWP_gmean)
+        print("CLDTOT ", CLDTOT_gmean)
+        if args.synch == True:
+            print("CLDTOT_SS, CLDTOT_AS ", CLDTOT_SS_gmean, CLDTOT_AS_gmean)
+            print("TGCLDLWP_SS, TGCLDLWP_AS ", TGCLDLWP_SS_gmean, TGCLDLWP_AS_gmean)
+            print("TGCLDIWP_SS, TGCLDIWP_AS ", TGCLDIWP_SS_gmean, TGCLDIWP_AS_gmean)
+        print("TOA ENERGY BALANCE ", toa_balance_gmean, energy_gmean)
+        print("SRF ENERGY BALANCE ", srf_balance_gmean)
         print("FLNT FSNT", FLNT_gmean, FSNT_gmean)
+        if args.synch == True:
+            print("FLNT_SS, FLNT_AS ", FLNT_SS_gmean, FLNT_AS_gmean)
         if 'FSDTOA' in ncid.variables: print("FSDTOA", FSDTOA_gmean)
         print("LW FLUXES ", FULTOA_gmean, FDLTOA_gmean, FULTOA_gmean - FDLTOA_gmean)
-        print("SW FLUXES ", FUSTOA_gmean, FDSTOA_gmean)
+        print("SW FLUXES ", FUSTOA_gmean, FDSTOA_gmean, FDSTOA_gmean - FUSTOA_gmean)
         print("TOP ", PTOP_gmean, TTOP_gmean, QTOP_gmean)
+        if args.cf == True:
+            print("FLNTC FSNTC", FLNTC_gmean, FSNTC_gmean)
+            print("CLEAR-SKY LW FLUXES ", FULCTOA_gmean, FDLCTOA_gmean, FULCTOA_gmean - FDLCTOA_gmean)
+            print("CLEAR-SKY SW FLUXES ", FUSCTOA_gmean, FDSCTOA_gmean, FDSCTOA_gmean - FUSCTOA_gmean)
+            print("SW CLOUD FORCING ", sw_cldforc_gmean)
+            print("LW CLOUD FORCING ", lw_cldforc_gmean)
+            if args.synch == True:
+                print("LW CLOUD FORCING SS ", lw_cldforc_SS_gmean)
+                print("LW CLOUD FORCING AS ", lw_cldforc_AS_gmean)
 
-        
     # Presently, the data sent to print to file routines are user specified here
     # Later I might create a namelist around these instead
     x=0
     datacube[x,i] = TS_gmean          ; varnames[x] = 'TS'        ; x=x+1
-    if (args.vertical == True):
+    if (args.vert == True):
         datacube[x,i] = T_STRAT_gmean ; varnames[x] = 'T_STRAT'   ; x=x+1
         datacube[x,i] = T_TROPO_gmean ; varnames[x] = 'T_TROPO'   ; x=x+1
     datacube[x,i] = ICEFRAC_gmean     ; varnames[x] = 'ICEFRAC'   ; x=x+1
@@ -280,7 +364,7 @@ for i in range(num):
     datacube[x,i] = TGCLDLWP_gmean    ; varnames[x] = 'TGCLDLWP'  ; x=x+1
     datacube[x,i] = TGCLDIWP_gmean    ; varnames[x] = 'TGCLDIWP'  ; x=x+1
     datacube[x,i] = CLDTOT_gmean      ; varnames[x] = 'CLDTOT'    ; x=x+1
-    if (args.vertical == True):
+    if (args.vert == True):
         datacube[x,i] = Q_STRAT_gmean ; varnames[x] = 'Q_STRAT'   ; x=x+1
     
 # output global mean quantities a text file
