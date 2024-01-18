@@ -156,13 +156,13 @@ for i in range(num):
     LHFLX_gmean          = exo.area_weighted_avg(lon, lat, LHFLX)
     if 'FSDTOA' in ncid.variables:
         FSDTOA_gmean     = exo.area_weighted_avg(lon, lat, FSDTOA)
-    temp                 = FUL[1,:,:] ; temp = np.squeeze(temp)
+    temp                 = FUL[0,:,:] ; temp = np.squeeze(temp)
     FULTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
-    temp                 = FDL[1,:,:] ; temp = np.squeeze(temp)
+    temp                 = FDL[0,:,:] ; temp = np.squeeze(temp)
     FDLTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
-    temp                 = FUS[1,:,:] ; temp = np.squeeze(temp)
+    temp                 = FUS[0,:,:] ; temp = np.squeeze(temp)
     FUSTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
-    temp                 = FDS[1,:,:] ; temp = np.squeeze(temp)
+    temp                 = FDS[0,:,:] ; temp = np.squeeze(temp)
     FDSTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
     temp                 = FUL[nlev,:,:] ; temp = np.squeeze(temp)
     FULSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
@@ -176,13 +176,13 @@ for i in range(num):
     if args.cf == True:
         FLNTC_gmean           = exo.area_weighted_avg(lon, lat, FLNTC)
         FSNTC_gmean           = exo.area_weighted_avg(lon, lat, FSNTC)
-        temp                  = FULC[1,:,:] ; temp = np.squeeze(temp)
+        temp                  = FULC[0,:,:] ; temp = np.squeeze(temp)
         FULCTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
-        temp                  = FDLC[1,:,:] ; temp = np.squeeze(temp)
+        temp                  = FDLC[0,:,:] ; temp = np.squeeze(temp)
         FDLCTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
-        temp                  = FUSC[1,:,:] ; temp = np.squeeze(temp)
+        temp                  = FUSC[0,:,:] ; temp = np.squeeze(temp)
         FUSCTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
-        temp                  = FDSC[1,:,:] ; temp = np.squeeze(temp)
+        temp                  = FDSC[0,:,:] ; temp = np.squeeze(temp)
         FDSCTOA_gmean         = exo.area_weighted_avg(lon, lat, temp)
         temp                  = FULC[nlev,:,:] ; temp = np.squeeze(temp)
         FULCSRF_gmean         = exo.area_weighted_avg(lon, lat, temp)
@@ -254,15 +254,15 @@ for i in range(num):
 
 
     # top layer temperature, water vapor and clouds
-    PTOP = lev_P[1,:,:] 
+    PTOP = lev_P[0,:,:] 
     PTOP_gmean =  exo.area_weighted_avg(lon, lat, PTOP)
-    TTOP = T[1,:,:] 
+    TTOP = T[0,:,:] 
     TTOP_gmean =  exo.area_weighted_avg(lon, lat, TTOP)
-    QTOP = Q[1,:,:] 
+    QTOP = Q[0,:,:] 
     QTOP_gmean =  exo.area_weighted_avg(lon, lat, QTOP)
-    CLDICE_TOP = CLDICE[1,:,:] 
+    CLDICE_TOP = CLDICE[0,:,:] 
     CLDICE_TOP_gmean =  exo.area_weighted_avg(lon, lat, CLDICE_TOP)
-    CLDLIQ_TOP = CLDLIQ[1,:,:] 
+    CLDLIQ_TOP = CLDLIQ[0,:,:] 
     CLDLIQ_TOP_gmean =  exo.area_weighted_avg(lon, lat, CLDLIQ_TOP)
 
     # compute substellar and antistellar means
