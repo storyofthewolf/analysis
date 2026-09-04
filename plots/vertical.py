@@ -168,3 +168,74 @@ class VertProfiles2x2(Plot):
         plt.tight_layout()
         save_figure(fig, outfile)
         print(f'vertical profile plot written to {outfile}')
+
+
+# ================================================================
+#  vert_1x2
+# ================================================================
+
+@register_plot('vert_1x2')
+class VertProfiles1x2(Plot):
+    """1×2 panel: Temperature | Water Vapor (kg/kg) for all profiles on one axes pair.
+
+    YAML options
+    ------------
+    sims    : list of integer indices into diagnostics (default: all)
+    labels  : list of strings, one per plotted profile
+    colors  : list of colors, one per entry in the full diagnostics list
+    title   : figure suptitle (default: 'Global Mean Vertical Profiles')
+    output  : output filename (default: results/vert_profiles_1x2.png)
+    """
+
+    def render(self, diagnostics: List[Diagnostics], options: dict) -> None:
+        sims    = options.get('sims', list(range(len(diagnostics))))
+        labels  = options.get('labels', None)
+        colors  = options.get('colors', None)
+        title   = options.get('title', 'Global Mean Vertical Profiles')
+        outfile = options.get('output', 'results/vert_profiles_1x2.png')
+
+        colors = get_colors(len(diagnostics), colors)
+
+        if labels is not None:
+            label_map = {idx: lab for idx, lab in zip(sims, labels)}
+        else:
+            label_map = {idx: diagnostics[idx].label for idx in sims}
+
+        fig, (ax_T, ax_Q) = plt.subplots(1, 2, figsize=(12, 6), sharey=True)
+
+        nplotted = 0
+        for idx in sims:
+            prof = diagnostics[idx].profile
+            if prof is None:
+                print(f'vert_1x2: no profile for simulation {idx}, skipping.')
+                continue
+            Pmid_hPa = prof.Pmid / 100.0
+            ax_T.plot(prof.T, Pmid_hPa, color=colors[idx],
+                      label=label_map[idx], linewidth=1.5)
+            ax_Q.plot(prof.Q, Pmid_hPa, color=colors[idx],
+                      label=label_map[idx], linewidth=1.5)
+            nplotted += 1
+
+        if nplotted == 0:
+            print('vert_1x2: no vertical profile data found, skipping.')
+            plt.close(fig)
+            return
+
+        ax_T.invert_yaxis()   # invert once; sharey propagates
+
+        for ax in (ax_T, ax_Q):
+            setup_pressure_axis(ax)
+
+        ax_T.set_xlabel('Temperature (K)')
+        ax_T.set_title('Temperature')
+        ax_T.set_xscale('linear')
+
+        ax_Q.set_xlabel('Water Vapor (kg/kg)')
+        ax_Q.set_title('Water Vapor')
+        ax_Q.set_xscale('log')
+        ax_Q.legend(loc='best', fontsize=8, frameon=True)
+
+        fig.suptitle(title, fontsize=13)
+        plt.tight_layout()
+        save_figure(fig, outfile)
+        print(f'vertical profile plot written to {outfile}')
